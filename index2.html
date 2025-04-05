@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://unpkg.com/@tailwindcss/browser@4"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" rel="stylesheet">
+    <title>零屿工作室小游戏合集</title>
+    <style>
+        /* 流星特效 */
+        @keyframes shooting-star {
+            0% {
+                transform: translate3d(0, 0, 0);
+                opacity: 1;
+            }
+            100% {
+                transform: translate3d(-100vw, 100vh, 0);
+                opacity: 0;
+            }
+        }
+
+        .shooting-star {
+            position: absolute;
+            width: 6px;
+            height: 6px;
+            background:rgba(247, 243, 37, 0.93);
+            border-radius: 50%;
+            animation: shooting-star 5s linear infinite;
+            pointer-events: none;
+        }
+
+        /* 暖色调背景 */
+        body {
+            background: linear-gradient(135deg, #e0f7fa 0%, #fff3e0 100%);
+        }
+
+        /* 模态框背景透明 */
+        #loginModal {
+            background-color: rgba(255, 255, 255, 0.7);
+        }
+
+        /* 适配手机端 */
+        @media (max-width: 768px) {
+            nav {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }
+
+            nav button {
+                margin-top: 0;
+            }
+
+            #gameGrid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            #gameGrid .game-link {
+                padding: 4px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            #gameGrid {
+                grid-template-columns: repeat(1, 1fr);
+            }
+        }
+    </style>
+</head>
+
+<body class="font-sans relative">
+    <!-- 流星特效 -->
+    <div class="shooting-star" style="top: 10%; left: 90%; animation-delay: 1s;"></div>
+    <div class="shooting-star" style="top: 20%; left: 80%; animation-delay: 3s;"></div>
+    <div class="shooting-star" style="top: 30%; left: 70%; animation-delay: 5s;"></div>
+    <div class="shooting-star" style="top: 40%; left: 60%; animation-delay: 7s;"></div>
+    <div class="shooting-star" style="top: 50%; left: 50%; animation-delay: 9s;"></div>
+
+    <!-- 顶部导航栏 -->
+    <nav class="bg-yellow-200 shadow-md p-4 flex justify-between items-center">
+        <div class="text-2xl font-bold text-orange-800">零屿工作室</div>
+        <button id="loginButton" class="bg-orange-800 text-white p-2 rounded-md hover:bg-orange-600">
+            <span id="loginText">登入/注册</span>
+        </button>
+    </nav>
+
+    <!-- 登录/注册模态框 -->
+    <div id="loginModal" class="hidden fixed top-0 left-0 w-full h-full flex justify-center items-center z-50">
+        <div class="bg-white p-8 rounded-lg shadow-md w-96">
+            <h2 class="text-2xl font-bold text-gray-800 mb-4">登入/注册</h2>
+            <input type="text" id="username" placeholder="用户名" class="border border-gray-300 p-2 w-full mb-2">
+            <select id="previousAccounts" class="border border-gray-300 p-2 w-full mb-2 hidden">
+                <!-- 以前的账号会通过 JavaScript 动态添加 -->
+            </select>
+            <input type="password" id="password" placeholder="密码" class="border border-gray-300 p-2 w-full mb-2">
+            <div id="passwordStrength" class="text-sm mb-2"></div>
+            <input type="checkbox" id="autoLogin"> <label for="autoLogin">自动登入</label>
+            <button id="submitLogin" class="bg-orange-800 text-white p-2 rounded-md w-full mt-4">提交</button>
+            <button id="closeModal" class="bg-gray-300 text-gray-800 p-2 rounded-md w-full mt-2">关闭</button>
+        </div>
+    </div>
+
+    <!-- 小游戏合集展示 -->
+    <div class="container mx-auto p-8 flex flex-col items-center">
+        <div class="flex justify-between items-center w-full mb-6">
+            <h1 class="text-3xl font-bold text-orange-800">小游戏合集</h1>
+            <select id="layoutSelector" class="border border-gray-300 p-2">
+                <option value="2">二列</option>
+                <option value="3">三列</option>
+            </select>
+        </div>
+        <div id="gameGrid" class="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <!-- 扫雷游戏卡片 -->
+            <a href="minesweeper.html" class="bg-white p-6 rounded-lg shadow-md hover:shadow-xl transform hover:scale-105 transition duration-300 game-link disabled:opacity-50">
+                <div class="text-2xl font-bold text-gray-800 mb-2">扫雷</div>
+                <p class="text-gray-600">经典的扫雷游戏，挑战你的逻辑思维。</p>
+            </a>
+            <!-- 数独游戏卡片 -->
+            <a href="sudoku.html" class="bg-white p-6 rounded-lg shadow-md hover:shadow-xl transform hover:scale-105 transition duration-300 game-link disabled:opacity-50">
+                <div class="text-2xl font-bold text-gray-800 mb-2">数独</div>
+                <p class="text-gray-600">数字解谜游戏，锻炼你的数学能力。</p>
+            </a>
+            <!-- 2048游戏卡片 -->
+            <a href="2048.html" class="bg-white p-6 rounded-lg shadow-md hover:shadow-xl transform hover:scale-105 transition duration-300 game-link disabled:opacity-50">
+                <div class="text-2xl font-bold text-gray-800 mb-2">2048</div>
+                <p class="text-gray-600">经典数字合并游戏。</p>
+            </a>
+            <!-- 华容道游戏卡片 -->
+            <a href="huarongdao.html" class="bg-white p-6 rounded-lg shadow-md hover:shadow-xl transform hover:scale-105 transition duration-300 game-link disabled:opacity-50">
+                <div class="text-2xl font-bold text-gray-800 mb-2">华容道（开发中）</div>
+                <p class="text-gray-600">古老的滑块解谜游戏。</p>
+            </a>
+            <!-- 俄罗斯方块游戏卡片 -->
+            <a href="tetris.html" class="bg-white p-6 rounded-lg shadow-md hover:shadow-xl transform hover:scale-105 transition duration-300 game-link disabled:opacity-50">
+                <div class="text-2xl font-bold text-gray-800 mb-2">俄罗斯方块</div>
+                <p class="text-gray-600">经典方块堆叠游戏。</p>
+            </a>
+            <!-- Flappy Bird游戏卡片 -->
+            <a href="flappybird.html" class="bg-white p-6 rounded-lg shadow-md hover:shadow-xl transform hover:scale-105 transition duration-300 game-link disabled:opacity-50">
+                <div class="text-2xl font-bold text-gray-800 mb-2">Flappy Bird （开发中）</div>
+                <p class="text-gray-600">简单又上瘾的飞行游戏。</p>
+            </a>
+            <!-- 合成大西瓜游戏卡片 -->
+            <a href="watermelon.html" class="bg-white p-6 rounded-lg shadow-md hover:shadow-xl transform hover:scale-105 transition duration-300 game-link disabled:opacity-50">
+                <div class="text-2xl font-bold text-gray-800 mb-2">合成大西瓜（开发中）</div>
+                <p class="text-gray-600">水果合成休闲游戏。</p>
+            </a>
+            <!-- 井字棋游戏卡片 -->
+            <a href="tictactoe.html" class="bg-white p-6 rounded-lg shadow-md hover:shadow-xl transform hover:scale-105 transition duration-300 game-link disabled:opacity-50">
+                <div class="text-2xl font-bold text-gray-800 mb-2">井字棋</div>
+                <p class="text-gray-600">简单的策略游戏。</p>
+            </a>
+        </div>
+    </div>
+
+    <!-- 底部信息 -->
+    <footer class="bg-yellow-200 shadow-md p-4 text-center text-orange-800">
+        <p>网站所属：零屿工作室</p>
+        <p>联系我们：QQ：3480782991  邮箱：3480782991@qq.com</p>
+    </footer>
+
+    <script>
+        const loginButton = document.getElementById('loginButton');
+        const loginModal = document.getElementById('loginModal');
+        const closeModal = document.getElementById('closeModal');
+        const submitLogin = document.getElementById('submitLogin');
+        const usernameInput = document.getElementById('username');
+        const passwordInput = document.getElementById('password');
+        const autoLoginCheckbox = document.getElementById('autoLogin');
+        const gameLinks = document.querySelectorAll('.game-link');
+        const layoutSelector = document.getElementById('layoutSelector');
+        const gameGrid = document.getElementById('gameGrid');
+        const previousAccountsSelect = document.getElementById('previousAccounts');
+        const passwordStrengthDiv = document.getElementById('passwordStrength');
+
+        // 获取本地存储中的所有账号
+        const getStoredAccounts = () => {
+            const accounts = [];
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key.endsWith('_password')) {
+                    const username = key.replace('_password', '');
+                    accounts.push(username);
+                }
+            }
+            return accounts;
+        };
+
+        // 显示以前的账号
+        const showPreviousAccounts = () => {
+            const accounts = getStoredAccounts();
+            if (accounts.length > 0) {
+                previousAccountsSelect.innerHTML = '';
+                accounts.forEach(account => {
+                    const option = document.createElement('option');
+                    option.value = account;
+                    option.textContent = account;
+                    previousAccountsSelect.appendChild(option);
+                });
+                previousAccountsSelect.classList.remove('hidden');
+            } else {
+                previousAccountsSelect.classList.add('hidden');
+            }
+        };
+
+        // 检查本地存储是否有自动登录信息
+        const storedUsername = localStorage.getItem('username');
+        const storedPassword = localStorage.getItem('password');
+        if (storedUsername && storedPassword) {
+            document.getElementById('loginText').textContent = `已登录：${storedUsername}`;
+            gameLinks.forEach(link => link.classList.remove('disabled'));
+        }
+
+        // 显示登录模态框
+        loginButton.addEventListener('click', () => {
+            loginModal.classList.remove('hidden');
+            showPreviousAccounts();
+        });
+
+        // 关闭登录模态框
+        closeModal.addEventListener('click', () => {
+            loginModal.classList.add('hidden');
+        });
+
+        // 密码强度评级
+        const checkPasswordStrength = (password) => {
+            const hasLetters = /[a-zA-Z]/.test(password);
+            const hasNumbers = /\d/.test(password);
+            const length = password.length;
+
+            if (length < 8) {
+                return '低';
+            } else if ((hasLetters && hasNumbers) || (length >= 12)) {
+                return '高';
+            } else if (hasLetters || hasNumbers) {
+                return '中';
+            }
+            return '低';
+        };
+
+        // 监听密码输入
+        passwordInput.addEventListener('input', () => {
+            const password = passwordInput.value;
+            const strength = checkPasswordStrength(password);
+            passwordStrengthDiv.textContent = `密码强度：${strength}`;
+        });
+
+        // 提交登录信息
+        submitLogin.addEventListener('click', () => {
+            const username = usernameInput.value;
+            const password = passwordInput.value;
+            const autoLogin = autoLoginCheckbox.checked;
+            const strength = checkPasswordStrength(password);
+
+            if (username.length < 2) {
+                alert('账号名称不能少于2个字');
+                return;
+            }
+            if (strength === '低') {
+                alert('密码强度过低，须达到中/高才可注册');
+                return;
+            }
+
+            if (autoLogin) {
+                localStorage.setItem('username', username);
+                localStorage.setItem('password', password);
+                localStorage.setItem(`${username}_password`, password);
+            }
+
+            document.getElementById('loginText').textContent = `已登录：${username}`;
+            loginModal.classList.add('hidden');
+            gameLinks.forEach(link => link.classList.remove('disabled'));
+        });
+
+        // 选择以前的账号
+        previousAccountsSelect.addEventListener('change', () => {
+            const selectedAccount = previousAccountsSelect.value;
+            usernameInput.value = selectedAccount;
+            passwordInput.value = localStorage.getItem(`${selectedAccount}_password`);
+        });
+
+        // 调整游戏布局
+        layoutSelector.addEventListener('change', () => {
+            const cols = layoutSelector.value;
+            gameGrid.classList.remove('grid-cols-1', 'grid-cols-2', 'grid-cols-3', 'md:grid-cols-2', 'md:grid-cols-3');
+            gameGrid.classList.add(`grid-cols-${cols}`);
+        });
+    </script>
+</body>
+
+</html>    

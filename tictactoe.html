@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>井字游戏/零屿工作室</title>
+    <script src="https://unpkg.com/@tailwindcss/browser@4"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" rel="stylesheet">
+    <style>
+      .cell {
+            width: 100px;
+            height: 100px;
+            border: 1px solid #ccc;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 36px;
+            cursor: pointer;
+        }
+
+        @media (max-width: 640px) {
+          .cell {
+                width: 80px;
+                height: 80px;
+                font-size: 30px;
+            }
+        }
+
+        @media (max-width: 480px) {
+          .cell {
+                width: 60px;
+                height: 60px;
+                font-size: 24px;
+            }
+        }
+
+      .score-card {
+            border: 1px solid #e2e8f0;
+            border-radius: 0.375rem;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            background-color: #fff;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+        }
+
+      .X {
+            color: #FF5733;
+        }
+
+      .O {
+            color: #337AFF;
+        }
+
+      .win {
+            color: #28a745;
+        }
+
+      .lose {
+            color: #dc3545;
+        }
+
+      .draw {
+            color: #ffc107;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-100">
+    <div class="flex justify-between items-center p-4 bg-white shadow-md">
+        <a href="index.html" class="text-blue-500 hover:text-blue-700"><i class="fa-solid fa-arrow-left"></i></a>
+        <h1 class="text-2xl font-bold">井字游戏</h1>
+        <div class="flex space-x-4">
+            <button id="resetButton" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+                onclick="resetGame()">重置</button>
+            <button id="aiButton" class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
+                onclick="toggleAI()">AI 对手</button>
+        </div>
+    </div>
+    <div class="text-center text-xl font-bold my-4" id="turnIndicator">当前轮到: X</div>
+    <div class="flex justify-center my-8">
+        <div class="grid grid-cols-3 gap-2">
+            <div class="cell" onclick="makeMove(0)"></div>
+            <div class="cell" onclick="makeMove(1)"></div>
+            <div class="cell" onclick="makeMove(2)"></div>
+            <div class="cell" onclick="makeMove(3)"></div>
+            <div class="cell" onclick="makeMove(4)"></div>
+            <div class="cell" onclick="makeMove(5)"></div>
+            <div class="cell" onclick="makeMove(6)"></div>
+            <div class="cell" onclick="makeMove(7)"></div>
+            <div class="cell" onclick="makeMove(8)"></div>
+        </div>
+    </div>
+    <div class="p-4 bg-white shadow-md mx-8">
+        <h2 class="text-xl font-bold mb-4">成绩榜</h2>
+        <div id="scoreboard"></div>
+    </div>
+    <script>
+        let board = ['', '', '', '', '', '', '', '', ''];
+        let currentPlayer = 'X';
+        let gameOver = false;
+        let aiMode = false;
+        const scoreboard = document.getElementById('scoreboard');
+        const aiButton = document.getElementById('aiButton');
+        const turnIndicator = document.getElementById('turnIndicator');
+
+        function makeMove(index) {
+            if (board[index] === '' &&!gameOver) {
+                board[index] = currentPlayer;
+                const cell = document.getElementsByClassName('cell')[index];
+                cell.textContent = currentPlayer;
+                cell.classList.add(currentPlayer);
+                if (checkWin(currentPlayer)) {
+                    gameOver = true;
+                    showResult(`${currentPlayer} 获胜！`);
+                    turnIndicator.textContent = `${currentPlayer} 获胜！游戏结束`;
+                } else if (board.every(cell => cell!== '')) {
+                    gameOver = true;
+                    showResult('平局！');
+                    turnIndicator.textContent = '平局！游戏结束';
+                } else {
+                    currentPlayer = currentPlayer === 'X'? 'O' : 'X';
+                    turnIndicator.textContent = `当前轮到: ${currentPlayer}`;
+                    if (aiMode && currentPlayer === 'O') {
+                        setTimeout(aiMove, 300);
+                    }
+                }
+            }
+        }
+
+        function checkWin(player) {
+            const winPatterns = [
+                [0, 1, 2], [3, 4, 5], [6, 7, 8],
+                [0, 3, 6], [1, 4, 7], [2, 5, 8],
+                [0, 4, 8], [2, 4, 6]
+            ];
+            return winPatterns.some(pattern => {
+                return pattern.every(index => board[index] === player);
+            });
+        }
+
+        function showResult(result) {
+            const now = new Date();
+            const time = now.toLocaleTimeString();
+            const date = now.toLocaleDateString();
+            const card = document.createElement('div');
+            card.classList.add('score-card');
+            let resultClass;
+            if (result.includes('获胜')) {
+                resultClass = 'win';
+            } else if (result.includes('平局')) {
+                resultClass = 'draw';
+            } else {
+                resultClass = 'lose';
+            }
+            let coloredResult = result;
+            if (result.includes('X')) {
+                coloredResult = result.replace('X', '<span class="X">X</span>');
+            } else if (result.includes('O')) {
+                coloredResult = result.replace('O', '<span class="O">O</span>');
+            }
+            card.innerHTML = `
+                <p><strong>游玩时间:</strong> ${time}</p>
+                <p class="${resultClass}"><strong>游戏结果:</strong> ${coloredResult}</p>
+                <p><strong>游玩日期:</strong> ${date}</p>
+            `;
+            scoreboard.appendChild(card);
+        }
+
+        function resetGame() {
+            board = ['', '', '', '', '', '', '', '', ''];
+            currentPlayer = 'X';
+            gameOver = false;
+            turnIndicator.textContent = '当前轮到: X';
+            const cells = document.getElementsByClassName('cell');
+            for (let i = 0; i < cells.length; i++) {
+                cells[i].textContent = '';
+                cells[i].classList.remove('X', 'O');
+            }
+        }
+
+        function toggleAI() {
+            aiMode =!aiMode;
+            if (aiMode) {
+                aiButton.classList.remove('bg-green-500', 'hover:bg-green-700');
+                aiButton.classList.add('bg-red-500', 'hover:bg-red-700');
+                resetGame();
+            } else {
+                aiButton.classList.remove('bg-red-500', 'hover:bg-red-700');
+                aiButton.classList.add('bg-green-500', 'hover:bg-green-700');
+            }
+        }
+
+        function aiMove() {
+            let bestScore = -Infinity;
+            let bestMove;
+            for (let i = 0; i < 9; i++) {
+                if (board[i] === '') {
+                    board[i] = 'O';
+                    let score = minimax(board, 0, false);
+                    board[i] = '';
+                    if (score > bestScore) {
+                        bestScore = score;
+                        bestMove = i;
+                    }
+                }
+            }
+            board[bestMove] = 'O';
+            const cell = document.getElementsByClassName('cell')[bestMove];
+            cell.textContent = 'O';
+            cell.classList.add('O');
+            if (checkWin('O')) {
+                gameOver = true;
+                showResult('O 获胜！');
+                turnIndicator.textContent = 'O 获胜！游戏结束';
+            } else if (board.every(cell => cell!== '')) {
+                gameOver = true;
+                showResult('平局！');
+                turnIndicator.textContent = '平局！游戏结束';
+            } else {
+                currentPlayer = 'X';
+                turnIndicator.textContent = `当前轮到: ${currentPlayer}`;
+            }
+        }
+
+        function minimax(board, depth, isMaximizing) {
+            if (checkWin('O')) {
+                return 10 - depth;
+            } else if (checkWin('X')) {
+                return -10 + depth;
+            } else if (board.every(cell => cell!== '')) {
+                return 0;
+            }
+
+            if (isMaximizing) {
+                let bestScore = -Infinity;
+                for (let i = 0; i < 9; i++) {
+                    if (board[i] === '') {
+                        board[i] = 'O';
+                        let score = minimax(board, depth + 1, false);
+                        board[i] = '';
+                        bestScore = Math.max(score, bestScore);
+                    }
+                }
+                return bestScore;
+            } else {
+                let bestScore = Infinity;
+                for (let i = 0; i < 9; i++) {
+                    if (board[i] === '') {
+                        board[i] = 'X';
+                        let score = minimax(board, depth + 1, true);
+                        board[i] = '';
+                        bestScore = Math.min(score, bestScore);
+                    }
+                }
+                return bestScore;
+            }
+        }
+    </script>
+</body>
+
+</html>
+    

@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>俄罗斯方块/零屿工作室</title>
+    <script src="https://unpkg.com/@tailwindcss/browser@4"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 0;
+            background-color: #f4f4f9;
+            font-family: 'Roboto', sans-serif;
+        }
+
+        #header {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            padding: 1rem;
+            background-color: #333;
+            color: white;
+        }
+
+        #back-button {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 1.2rem;
+            cursor: pointer;
+        }
+
+        #title {
+            flex-grow: 1;
+            text-align: center;
+            font-size: 2rem;
+            margin: 0;
+        }
+
+        #game-info {
+            width: 100%;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            padding: 1rem;
+        }
+
+        #score-display {
+            font-size: 1.5rem;
+        }
+
+        #reset-button {
+            padding: 0.5rem 1rem;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        #high-score {
+            font-size: 1.5rem;
+        }
+
+        #game-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+            max-width: 400px;
+        }
+
+        #game-board {
+            display: grid;
+            grid-template-columns: repeat(10, minmax(15px, 20px));
+            grid-template-rows: repeat(20, minmax(15px, 20px));
+            gap: 1px;
+            background-color: #333;
+            border: 2px solid #555;
+            margin-bottom: 20px;
+        }
+
+        .cell {
+            background-color: #0000007c;
+        }
+
+        .cell.filled {
+            background-color: #007bff;
+        }
+
+        #controls {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+            width: 100%;
+        }
+
+        #controls button {
+            flex: 1;
+            padding: 10px;
+            font-size: 16px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        #controls button:hover {
+            background-color: #0056b3;
+        }
+
+        #scoreboard {
+            width: 100%;
+            max-width: 400px;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+
+        #scoreboard th,
+        #scoreboard td {
+            border: 1px solid #ccc;
+            padding: 0.5rem;
+            text-align: center;
+        }
+
+        #scoreboard th {
+            background-color: #f0f0f0;
+        }
+
+        #game-explanation {
+            width: 100%;
+            max-width: 600px;
+            padding: 1rem;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="header">
+        <button id="back-button" onclick="window.location.href='index.html'"><i class="fa-solid fa-arrow-left"></i></button>
+        <h1 id="title">俄罗斯方块</h1>
+    </div>
+    <div id="game-info">
+        <div id="score-display">得分: <span id="score">0</span></div>
+        <button id="reset-button">重置</button>
+        <div id="high-score">历史最高记录: <span id="high-score-value">0</span></div>
+    </div>
+    <div id="game-container">
+        <div id="game-board"></div>
+        <div id="controls">
+            <button id="left-button"><i class="fa-solid fa-arrow-left"></i></button>
+            <button id="rotate-button"><i class="fa-solid fa-rotate"></i></button>
+            <button id="right-button"><i class="fa-solid fa-arrow-right"></i></button>
+            <button id="down-button"><i class="fa-solid fa-arrow-down"></i></button>
+        </div>
+    </div>
+    <table id="scoreboard">
+        <thead>
+            <tr>
+                <th>排名</th>
+                <th>得分</th>
+            </tr>
+        </thead>
+        <tbody id="scoreboard-body">
+            <!-- 成绩榜数据将在这里动态填充 -->
+        </tbody>
+    </table>
+    <div id="game-explanation">
+        <h2>玩法解释</h2>
+        <p>俄罗斯方块是一款经典的益智游戏，游戏目标是操控各种形状的方块，使其在下降过程中填满一行或多行，从而消除这些行并获得分数。</p>
+        <h3>游戏规则</h3>
+        <ol>
+            <li>游戏开始后，会随机出现不同形状的方块，这些方块会从游戏区域的顶部开始缓慢下降。</li>
+            <li>玩家可以通过操作按钮来控制方块的移动和旋转，具体操作如下：
+                <ul>
+                    <li>点击“左箭头”按钮或按下键盘上的“左箭头”键，可将方块向左移动一格。</li>
+                    <li>点击“右箭头”按钮或按下键盘上的“右箭头”键，可将方块向右移动一格。</li>
+                    <li>点击“旋转”按钮或按下键盘上的“上箭头”键，可将方块顺时针旋转 90 度。</li>
+                    <li>点击“下箭头”按钮或按下键盘上的“下箭头”键，可使方块加速下降。</li>
+                </ul>
+            </li>
+            <li>当方块下降到游戏区域底部或与其他方块接触时，方块会固定在当前位置，然后会出现新的方块继续下降。</li>
+            <li>如果某一行被方块完全填满，该行会被消除，玩家将获得 100 分的奖励。同时，上方的方块会向下移动填补空缺。</li>
+            <li>游戏会持续进行，直到方块堆叠到游戏区域顶部，无法再出现新的方块，此时游戏结束。</li>
+        </ol>
+        <h3>计分规则</h3>
+        <p>每消除一行，玩家将获得 100 分。游戏结束后，如果玩家的得分超过历史最高记录，历史最高记录将被更新。</p>
+        <h3>重置游戏</h3>
+        <p>点击“重置”按钮，可重新开始游戏，游戏区域的方块会被清空，得分会归零。</p>
+    </div>
+    <script>
+        const gameBoard = document.getElementById('game-board');
+        const scoreElement = document.getElementById('score');
+        const resetButton = document.getElementById('reset-button');
+        const highScoreElement = document.getElementById('high-score-value');
+        const scoreboardBody = document.getElementById('scoreboard-body');
+        const leftButton = document.getElementById('left-button');
+        const rotateButton = document.getElementById('rotate-button');
+        const rightButton = document.getElementById('right-button');
+        const downButton = document.getElementById('down-button');
+
+        const ROWS = 20;
+        const COLS = 10;
+        let board = Array.from({ length: ROWS }, () => Array(COLS).fill(0));
+        let currentPiece;
+        let currentX;
+        let currentY;
+        let score = 0;
+        let gameInterval;
+        let highScore = localStorage.getItem('tetrisHighScore') || 0;
+        highScoreElement.textContent = highScore;
+        let scores = JSON.parse(localStorage.getItem('tetrisScores')) || [];
+
+        const SHAPES = [
+            [[1, 1, 1, 1]],
+            [[1, 1], [1, 1]],
+            [[1, 1, 0], [0, 1, 1]],
+            [[0, 1, 1], [1, 1, 0]],
+            [[1, 1, 1], [0, 1, 0]],
+            [[1, 1, 1], [1, 0, 0]],
+            [[1, 1, 1], [0, 0, 1]]
+        ];
+
+        function createBoard() {
+            for (let i = 0; i < ROWS; i++) {
+                for (let j = 0; j < COLS; j++) {
+                    const cell = document.createElement('div');
+                    cell.classList.add('cell');
+                    gameBoard.appendChild(cell);
+                }
+            }
+        }
+
+        function drawBoard() {
+            const cells = gameBoard.children;
+            for (let i = 0; i < ROWS; i++) {
+                for (let j = 0; j < COLS; j++) {
+                    const index = i * COLS + j;
+                    if (board[i][j] === 1) {
+                        cells[index].classList.add('filled');
+                    } else {
+                        cells[index].classList.remove('filled');
+                    }
+                }
+            }
+        }
+
+        function drawPiece() {
+            const cells = gameBoard.children;
+            for (let i = 0; i < currentPiece.length; i++) {
+                for (let j = 0; j < currentPiece[i].length; j++) {
+                    if (currentPiece[i][j] === 1) {
+                        const x = currentX + j;
+                        const y = currentY + i;
+                        if (x >= 0 && x < COLS && y >= 0 && y < ROWS) {
+                            const index = y * COLS + x;
+                            cells[index].classList.add('filled');
+                        }
+                    }
+                }
+            }
+        }
+
+        function clearPiece() {
+            const cells = gameBoard.children;
+            for (let i = 0; i < currentPiece.length; i++) {
+                for (let j = 0; j < currentPiece[i].length; j++) {
+                    if (currentPiece[i][j] === 1) {
+                        const x = currentX + j;
+                        const y = currentY + i;
+                        if (x >= 0 && x < COLS && y >= 0 && y < ROWS) {
+                            const index = y * COLS + x;
+                            cells[index].classList.remove('filled');
+                        }
+                    }
+                }
+            }
+        }
+
+        function newPiece() {
+            const randomIndex = Math.floor(Math.random() * SHAPES.length);
+            currentPiece = SHAPES[randomIndex];
+            currentX = Math.floor(COLS / 2) - Math.floor(currentPiece[0].length / 2);
+            currentY = 0;
+            if (!canMove(currentPiece, currentX, currentY)) {
+                gameOver();
+            }
+        }
+
+        function canMove(piece, x, y) {
+            for (let i = 0; i < piece.length; i++) {
+                for (let j = 0; j < piece[i].length; j++) {
+                    if (piece[i][j] === 1) {
+                        const newX = x + j;
+                        const newY = y + i;
+                        if (newX < 0 || newX >= COLS || newY >= ROWS || (newY >= 0 && board[newY][newX] === 1)) {
+                            return false;
+                        }
+                    }
+                }
+            }
+            return true;
+        }
+
+        function mergePiece() {
+            for (let i = 0; i < currentPiece.length; i++) {
+                for (let j = 0; j < currentPiece[i].length; j++) {
+                    if (currentPiece[i][j] === 1) {
+                        board[currentY + i][currentX + j] = 1;
+                    }
+                }
+            }
+        }
+
+        function clearLines() {
+            for (let i = 0; i < ROWS; i++) {
+                if (board[i].every(cell => cell === 1)) {
+                    board.splice(i, 1);
+                    board.unshift(Array(COLS).fill(0));
+                    score += 100;
+                    scoreElement.textContent = score;
+                }
+            }
+        }
+
+        function moveDown() {
+            clearPiece();
+            if (canMove(currentPiece, currentX, currentY + 1)) {
+                currentY++;
+            } else {
+                mergePiece();
+                clearLines();
+                newPiece();
+            }
+            drawBoard();
+            drawPiece();
+        }
+
+        function moveLeft() {
+            clearPiece();
+            if (canMove(currentPiece, currentX - 1, currentY)) {
+                currentX--;
+            }
+            drawBoard();
+            drawPiece();
+        }
+
+        function moveRight() {
+            clearPiece();
+            if (canMove(currentPiece, currentX + 1, currentY)) {
+                currentX++;
+            }
+            drawBoard();
+            drawPiece();
+        }
+
+        function rotatePiece() {
+            const rotatedPiece = currentPiece[0].map((_, index) => currentPiece.map(row => row[index]).reverse());
+            clearPiece();
+            if (canMove(rotatedPiece, currentX, currentY)) {
+                currentPiece = rotatedPiece;
+            }
+            drawBoard();
+            drawPiece();
+        }
+
+        function gameOver() {
+            clearInterval(gameInterval);
+            if (score > highScore) {
+                highScore = score;
+                highScoreElement.textContent = highScore;
+                localStorage.setItem('tetrisHighScore', highScore);
+            }
+            scores.push(score);
+            scores.sort((a, b) => b - a);
+            scores = scores.slice(0, 10);
+            localStorage.setItem('tetrisScores', JSON.stringify(scores));
+            updateScoreboard();
+            alert('游戏结束！得分: ' + score);
+            resetGame();
+        }
+
+        function resetGame() {
+            board = Array.from({ length: ROWS }, () => Array(COLS).fill(0));
+            score = 0;
+            scoreElement.textContent = score;
+            newPiece();
+            drawBoard();
+            drawPiece();
+            clearInterval(gameInterval);
+            gameInterval = setInterval(moveDown, 500);
+        }
+
+        function updateScoreboard() {
+            scoreboardBody.innerHTML = '';
+            scores.forEach((score, index) => {
+                const row = document.createElement('tr');
+                const rankCell = document.createElement('td');
+                rankCell.textContent = index + 1;
+                const scoreCell = document.createElement('td');
+                scoreCell.textContent = score;
+                row.appendChild(rankCell);
+                row.appendChild(scoreCell);
+                scoreboardBody.appendChild(row);
+            });
+        }
+
+        createBoard();
+        resetGame();
+        updateScoreboard();
+
+        resetButton.addEventListener('click', resetGame);
+
+        document.addEventListener('keydown', function (event) {
+            if (gameInterval) {
+                if (event.key === 'ArrowLeft') {
+                    moveLeft();
+                } else if (event.key === 'ArrowRight') {
+                    moveRight();
+                } else if (event.key === 'ArrowDown') {
+                    moveDown();
+                } else if (event.key === 'ArrowUp') {
+                    rotatePiece();
+                }
+            }
+        });
+
+        leftButton.addEventListener('click', moveLeft);
+        rotateButton.addEventListener('click', rotatePiece);
+        rightButton.addEventListener('click', moveRight);
+        downButton.addEventListener('click', moveDown);
+    </script>
+</body>
+
+</html>
+    

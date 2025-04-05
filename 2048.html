@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2048游戏/零屿工作室</title>
+    <script src="https://unpkg.com/@tailwindcss/browser@4"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" rel="stylesheet">
+    <style>
+        /* 基础样式 */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            min-height: 100vh;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            background-color: white;
+            padding: 10px 20px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        /* 按钮样式 */
+        button {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.2s ease;
+        }
+
+        button:hover {
+            filter: brightness(0.9);
+        }
+
+        /* 容器样式 */
+        .container {
+            width: 90%;
+            max-width: 400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* 分数和重置区域样式 */
+        .score-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        /* 网格样式 */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 5px;
+            background-color: #bbada0;
+            padding: 5px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+
+        /* 单元格样式 */
+        .cell {
+            width: calc((100vw - 40px - 20px) / 4 - 5px);
+            max-width: 70px;
+            height: calc((100vw - 40px - 20px) / 4 - 5px);
+            max-height: 70px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: clamp(16px, 5vw, 24px);
+            font-weight: bold;
+            border-radius: 3px;
+            transition: all 0.2s ease;
+        }
+
+        /* 单元格颜色 */
+        .cell[data-value="2"] {
+            background-color: #eee4da;
+        }
+
+        .cell[data-value="4"] {
+            background-color: #ede0c8;
+        }
+
+        .cell[data-value="8"] {
+            background-color: #f2b179;
+        }
+
+        .cell[data-value="16"] {
+            background-color: #f59563;
+        }
+
+        .cell[data-value="32"] {
+            background-color: #f67c5f;
+        }
+
+        .cell[data-value="64"] {
+            background-color: #f65e3b;
+        }
+
+        .cell[data-value="128"] {
+            background-color: #edcf72;
+        }
+
+        .cell[data-value="256"] {
+            background-color: #edcc61;
+        }
+
+        .cell[data-value="512"] {
+            background-color: #edc850;
+        }
+
+        .cell[data-value="1024"] {
+            background-color: #edc53f;
+        }
+
+        .cell[data-value="2048"] {
+            background-color: #edc22e;
+        }
+
+        .cell[data-value="0"] {
+            background-color: #cdc1b4;
+        }
+
+        /* 成绩榜和排序选择框布局样式 */
+        .scoreboard-sort-container {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        /* 成绩榜样式 */
+        .scoreboard-card {
+            background-color: #fff;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            flex: 2;
+        }
+
+        .scoreboard-header {
+            padding: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .scoreboard-content {
+            padding: 10px;
+            display: none;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th,
+        td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f2f2f2;
+        }
+
+        /* 排序选择框卡片样式 */
+        .sort-select-card {
+            background-color: #fff;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 10px;
+        }
+
+        /* 动画样式 */
+        .animate-move {
+            animation: move 0.2s ease;
+        }
+
+        .animate-merge {
+            animation: merge 0.2s ease;
+        }
+
+        @keyframes move {
+            from {
+                transform: scale(0.8);
+                opacity: 0.5;
+            }
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        @keyframes merge {
+            from {
+                transform: scale(1);
+            }
+            to {
+                transform: scale(1.2);
+            }
+        }
+
+        /* 玩法介绍和策略提示样式 */
+        .instructions {
+            width: 90%;
+            max-width: 400px;
+            background-color: #fff;
+            border-radius: 5px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .instructions h2 {
+            font-size: 20px;
+            margin-bottom: 10px;
+        }
+
+        .instructions p {
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-100">
+    <div class="header">
+        <div class="flex w-full justify-between items-center px-4 pt-8">
+             <a href="index.html" class="text-blue-500 hover:text-blue-700"><i class="fa-solid fa-arrow-left"></i></a>
+            <h1 class="text-2xl font-bold">2048游戏</h1>
+        </div>
+    </div>
+    <div class="container">
+        <div class="score-section">
+            <div id="score" class="text-xl">当前分数: 0</div>
+            <button id="restart" class="bg-blue-500 text-white">重置</button>
+            <div id="high-score" class="text-xl">历史最高分数: 0</div>
+        </div>
+        <div id="grid" class="grid"></div>
+        <div class="scoreboard-sort-container">
+            <div class="scoreboard-card">
+                <div class="scoreboard-header" onclick="toggleScoreboard()">
+                    <span>成绩榜</span>
+                    <i class="fa-solid fa-chevron-down"></i>
+                </div>
+                <div class="scoreboard-content" id="scoreboard-content">
+                    <table id="scoreboard">
+                        <thead>
+                            <tr>
+                                <th>分数</th>
+                                <th>游玩时间</th>
+                                <th>游玩日期</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="sort-select-card">
+                <select id="sort-select">
+                    <option value="date">按日期降序查看</option>
+                    <option value="score">按分数降序查看</option>
+                </select>
+            </div>
+        </div>
+    </div>
+    <div class="instructions">
+        <h2>玩法介绍</h2>
+        <p>在 2048 游戏中，你可以使用方向键（上、下、左、右）或者在手机上滑动屏幕来移动方块。每次移动后，会有一个新的方块随机出现在空白位置，方块上的数字为 2 或 4。当两个相同数字的方块碰撞时，它们会合并成一个数字为两者之和的方块。你的目标是合并出数字为 2048 的方块。</p>
+        <h2>策略提示</h2>
+        <p>1. 尽量保持一个方向的增长，例如始终将大数字集中在左上角或右下角。</p>
+        <p>2. 优先合并较大的数字，避免分散它们。</p>
+        <p>3. 留意空白位置，确保有足够的空间进行移动和合并。</p>
+    </div>
+
+    <script>
+        const grid = document.getElementById('grid');
+        const scoreElement = document.getElementById('score');
+        const highScoreElement = document.getElementById('high-score');
+        const restartButton = document.getElementById('restart');
+        const sortSelect = document.getElementById('sort-select');
+        const scoreboard = document.getElementById('scoreboard').getElementsByTagName('tbody')[0];
+        const scoreboardContent = document.getElementById('scoreboard-content');
+        let board = [];
+        let score = 0;
+        let highScore = localStorage.getItem('highScore') || 0;
+        highScore = parseInt(highScore);
+        highScoreElement.textContent = `历史最高分数: ${highScore}`;
+        let scores = JSON.parse(localStorage.getItem('scores')) || [];
+        let startTime;
+
+        function initBoard() {
+            board = Array.from({ length: 4 }, () => Array(4).fill(0));
+            addRandomTile();
+            addRandomTile();
+            updateScore();
+            renderBoard();
+            startTime = new Date();
+        }
+
+        function addRandomTile() {
+            const emptyCells = [];
+            for (let i = 0; i < 4; i++) {
+                for (let j = 0; j < 4; j++) {
+                    if (board[i][j] === 0) {
+                        emptyCells.push({ i, j });
+                    }
+                }
+            }
+            if (emptyCells.length > 0) {
+                const { i, j } = emptyCells[Math.floor(Math.random() * emptyCells.length)];
+                board[i][j] = Math.random() < 0.9 ? 2 : 4;
+            }
+        }
+
+        function renderBoard() {
+            grid.innerHTML = '';
+            for (let i = 0; i < 4; i++) {
+                for (let j = 0; j < 4; j++) {
+                    const cell = document.createElement('div');
+                    cell.classList.add('cell');
+                    cell.dataset.value = board[i][j];
+                    if (board[i][j] !== 0) {
+                        cell.textContent = board[i][j];
+                    }
+                    grid.appendChild(cell);
+                }
+            }
+            scoreElement.textContent = `当前分数: ${score}`;
+        }
+
+        function getCellColor(value) {
+            switch (value) {
+                case 2: return '#eee4da';
+                case 4: return '#ede0c8';
+                case 8: return '#f2b179';
+                case 16: return '#f59563';
+                case 32: return '#f67c5f';
+                case 64: return '#f65e3b';
+                case 128: return '#edcf72';
+                case 256: return '#edcc61';
+                case 512: return '#edc850';
+                case 1024: return '#edc53f';
+                case 2048: return '#edc22e';
+                default: return '#3c3a32';
+            }
+        }
+
+        function moveLeft() {
+            let moved = false;
+            for (let i = 0; i < 4; i++) {
+                for (let j = 1; j < 4; j++) {
+                    if (board[i][j] !== 0) {
+                        let k = j;
+                        while (k > 0 && board[i][k - 1] === 0) {
+                            board[i][k - 1] = board[i][k];
+                            board[i][k] = 0;
+                            k--;
+                            moved = true;
+                            const cell = grid.children[i * 4 + k];
+                            cell.classList.add('animate-move');
+                            setTimeout(() => cell.classList.remove('animate-move'), 200);
+                        }
+                        if (k > 0 && board[i][k - 1] === board[i][k]) {
+                            board[i][k - 1] *= 2;
+                            board[i][k] = 0;
+                            moved = true;
+                            const cell = grid.children[i * 4 + k - 1];
+                            cell.classList.add('animate-merge');
+                            setTimeout(() => cell.classList.remove('animate-merge'), 200);
+                        }
+                    }
+                }
+            }
+            if (moved) {
+                addRandomTile();
+                updateScore();
+                renderBoard();
+            }
+            checkGameOver();
+        }
+
+        function moveRight() {
+            let moved = false;
+            for (let i = 0; i < 4; i++) {
+                for (let j = 2; j >= 0; j--) {
+                    if (board[i][j] !== 0) {
+                        let k = j;
+                        while (k < 3 && board[i][k + 1] === 0) {
+                            board[i][k + 1] = board[i][k];
+                            board[i][k] = 0;
+                            k++;
+                            moved = true;
+                            const cell = grid.children[i * 4 + k];
+                            cell.classList.add('animate-move');
+                            setTimeout(() => cell.classList.remove('animate-move'), 200);
+                        }
+                        if (k < 3 && board[i][k + 1] === board[i][k]) {
+                            board[i][k + 1] *= 2;
+                            board[i][k] = 0;
+                            moved = true;
+                            const cell = grid.children[i * 4 + k + 1];
+                            cell.classList.add('animate-merge');
+                            setTimeout(() => cell.classList.remove('animate-merge'), 200);
+                        }
+                    }
+                }
+            }
+            if (moved) {
+                addRandomTile();
+                updateScore();
+                renderBoard();
+            }
+            checkGameOver();
+        }
+
+        function moveUp() {
+            let moved = false;
+            for (let j = 0; j < 4; j++) {
+                for (let i = 1; i < 4; i++) {
+                    if (board[i][j] !== 0) {
+                        let k = i;
+                        while (k > 0 && board[k - 1][j] === 0) {
+                            board[k - 1][j] = board[k][j];
+                            board[k][j] = 0;
+                            k--;
+                            moved = true;
+                            const cell = grid.children[k * 4 + j];
+                            cell.classList.add('animate-move');
+                            setTimeout(() => cell.classList.remove('animate-move'), 200);
+                        }
+                        if (k > 0 && board[k - 1][j] === board[k][j]) {
+                            board[k - 1][j] *= 2;
+                            board[k][j] = 0;
+                            moved = true;
+                            const cell = grid.children[(k - 1) * 4 + j];
+                            cell.classList.add('animate-merge');
+                            setTimeout(() => cell.classList.remove('animate-merge'), 200);
+                        }
+                    }
+                }
+            }
+            if (moved) {
+                addRandomTile();
+                updateScore();
+                renderBoard();
+            }
+            checkGameOver();
+        }
+
+        function moveDown() {
+            let moved = false;
+            for (let j = 0; j < 4; j++) {
+                for (let i = 2; i >= 0; i--) {
+                    if (board[i][j] !== 0) {
+                        let k = i;
+                        while (k < 3 && board[k + 1][j] === 0) {
+                            board[k + 1][j] = board[k][j];
+                            board[k][j] = 0;
+                            k++;
+                            moved = true;
+                            const cell = grid.children[k * 4 + j];
+                            cell.classList.add('animate-move');
+                            setTimeout(() => cell.classList.remove('animate-move'), 200);
+                        }
+                        if (k < 3 && board[k + 1][j] === board[k][j]) {
+                            board[k + 1][j] *= 2;
+                            board[k][j] = 0;
+                            moved = true;
+                            const cell = grid.children[(k + 1) * 4 + j];
+                            cell.classList.add('animate-merge');
+                            setTimeout(() => cell.classList.remove('animate-merge'), 200);
+                        }
+                    }
+                }
+            }
+            if (moved) {
+                addRandomTile();
+                updateScore();
+                renderBoard();
+            }
+            checkGameOver();
+        }
+
+        function updateScore() {
+            let maxValue = 0;
+            for (let i = 0; i < 4; i++) {
+                for (let j = 0; j < 4; j++) {
+                    if (board[i][j] > maxValue) {
+                        maxValue = board[i][j];
+                    }
+                }
+            }
+            score = maxValue;
+            scoreElement.textContent = `当前分数: ${score}`;
+        }
+
+        function saveScore() {
+            const endTime = new Date();
+            const duration = Math.round((endTime - startTime) / 1000);
+            const date = endTime.toLocaleDateString();
+            scores.push({ score, duration, date });
+            sortScores('date');
+            localStorage.setItem('scores', JSON.stringify(scores));
+            if (score > highScore) {
+                highScore = score;
+                localStorage.setItem('highScore', highScore);
+                highScoreElement.textContent = `历史最高分数: ${highScore}`;
+            }
+            renderScoreboard();
+        }
+
+        function renderScoreboard() {
+            scoreboard.innerHTML = '';
+            scores.forEach((entry) => {
+                const row = scoreboard.insertRow();
+                const scoreCell = row.insertCell();
+                const durationCell = row.insertCell();
+                const dateCell = row.insertCell();
+                scoreCell.textContent = entry.score;
+                durationCell.textContent = `${entry.duration} 秒`;
+                dateCell.textContent = entry.date;
+            });
+        }
+
+        function sortScores(sortBy) {
+            if (sortBy === 'date') {
+                scores.sort((a, b) => new Date(b.date) - new Date(a.date));
+            } else if (sortBy === 'score') {
+                scores.sort((a, b) => b.score - a.score);
+            }
+        }
+
+        function checkGameOver() {
+            for (let i = 0; i < 4; i++) {
+                for (let j = 0; j < 4; j++) {
+                    if (board[i][j] === 0) {
+                        return false;
+                    }
+                    if (i > 0 && board[i][j] === board[i - 1][j]) {
+                        return false;
+                    }
+                    if (i < 3 && board[i][j] === board[i + 1][j]) {
+                        return false;
+                    }
+                    if (j > 0 && board[i][j] === board[i][j - 1]) {
+                        return false;
+                    }
+                    if (j < 3 && board[i][j] === board[i][j + 1]) {
+                        return false;
+                    }
+                }
+            }
+            saveScore();
+            alert('游戏结束！您的成绩已记录。');
+            initBoard();
+            return true;
+        }
+
+        document.addEventListener('keydown', function (e) {
+            switch (e.key) {
+                case 'ArrowLeft':
+                    moveLeft();
+                    break;
+                case 'ArrowRight':
+                    moveRight();
+                    break;
+                case 'ArrowUp':
+                    moveUp();
+                    break;
+                case 'ArrowDown':
+                    moveDown();
+                    break;
+            }
+        });
+
+        // 处理手机端触摸事件
+        let touchStartX = 0;
+        let touchStartY = 0;
+        let touchEndX = 0;
+        let touchEndY = 0;
+
+        document.addEventListener('touchstart', function (e) {
+            touchStartX = e.touches[0].clientX;
+            touchStartY = e.touches[0].clientY;
+        });
+
+        document.addEventListener('touchend', function (e) {
+            touchEndX = e.changedTouches[0].clientX;
+            touchEndY = e.changedTouches[0].clientY;
+            handleSwipe();
+        });
+
+        function handleSwipe() {
+            const xDiff = touchEndX - touchStartX;
+            const yDiff = touchEndY - touchStartY;
+            const threshold = 50;
+
+            if (Math.abs(xDiff) > Math.abs(yDiff)) {
+                if (xDiff > threshold) {
+                    moveRight();
+                } else if (xDiff < -threshold) {
+                    moveLeft();
+                }
+            } else {
+                if (yDiff > threshold) {
+                    moveDown();
+                } else if (yDiff < -threshold) {
+                    moveUp();
+                }
+            }
+        }
+
+        restartButton.addEventListener('click', function () {
+            if (score > 0) {
+                saveScore();
+            }
+            score = 0;
+            initBoard();
+        });
+
+        sortSelect.addEventListener('change', function () {
+            const sortBy = sortSelect.value;
+            sortScores(sortBy);
+            renderScoreboard();
+        });
+
+        function toggleScoreboard() {
+            const icon = document.querySelector('.scoreboard-header i');
+            if (scoreboardContent.style.display === 'none') {
+                scoreboardContent.style.display = 'block';
+                icon.classList.remove('fa-chevron-down');
+                icon.classList.add('fa-chevron-up');
+            } else {
+                scoreboardContent.style.display = 'none';
+                icon.classList.remove('fa-chevron-up');
+                icon.classList.add('fa-chevron-down');
+            }
+        }
+
+        initBoard();
+        renderScoreboard();
+    </script>
+</body>
+
+</html>
+    

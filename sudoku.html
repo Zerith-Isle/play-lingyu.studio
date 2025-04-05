@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://unpkg.com/@tailwindcss/browser@4"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" rel="stylesheet">
+  <title>数独游戏/零屿工作室</title>
+  <style>
+    .sudoku-grid {
+      display: grid;
+      grid-template-columns: repeat(9, 1fr);
+      grid-template-rows: repeat(9, 1fr);
+      gap: 1px;
+      background-color: black;
+      margin: 20px auto;
+      width: fit-content;
+    }
+
+    .sudoku-cell {
+      width: 40px;
+      height: 40px;
+      background-color: white;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 20px;
+      cursor: pointer;
+      border: 1px solid #ccc; /* 普通边框 */
+    }
+
+    /* 第 3 和第 4 列的右边框加粗 */
+    .sudoku-cell:nth-child(3n + 3) {
+      border-right: 3px solid black;
+    }
+
+    /* 第 6 和第 7 列的右边框加粗 */
+    .sudoku-cell:nth-child(3n + 6) {
+      border-right: 3px solid black;
+    }
+
+    /* 第 3 和第 4 行的下边框加粗 */
+    .sudoku-cell:nth-child(n + 18):nth-child(-n + 27) {
+      border-bottom: 3px solid black;
+    }
+
+    /* 第 6 和第 7 行的下边框加粗 */
+    .sudoku-cell:nth-child(n + 45):nth-child(-n + 54) {
+      border-bottom: 3px solid black;
+    }
+
+    .selected-number {
+      background-color: lightblue;
+    }
+
+    .user-input {
+      color: green;
+    }
+
+    .completed {
+      background-color: orange;
+    }
+
+    /* 将蓝色背景改为浅蓝色 */
+    .blue-bg {
+      background-color: lightblue;
+    }
+
+    .scoreboard {
+      display: none;
+    }
+
+    .scoreboard.show {
+      display: block;
+    }
+
+    .delete-button {
+      font-size: 12px;
+      width: auto;
+      padding: 0 5px;
+    }
+
+    .error-input {
+      color: red;
+    }
+
+    .highlighted-cell {
+      background-color: lightyellow;
+    }
+  </style>
+</head>
+
+<body class="bg-white text-black">
+  <div class="container mx-auto p-4">
+    <div class="flex justify-between items-center mb-4">
+      <a href="index.html" class="text-blue-500 hover:text-blue-700">
+        <i class="fa-solid fa-arrow-left"></i>
+      </a>
+      <h1 class="text-3xl font-bold text-center mb-4">数独游戏</h1>
+      <div></div>
+    </div>
+    <div class="flex justify-between mb-4">
+      <div>
+        <p>分数: <span id="score">0</span></p>
+        <p>空格数: <span id="empty-cells">0</span></p>
+      </div>
+      <button id="reset-button" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">重置</button>
+      <div>
+        <p>时间: <span id="timer">0:00</span></p>
+      </div>
+    </div>
+    <div class="flex justify-center mb-4">
+      <label for="difficulty">难度选择: </label>
+      <select id="difficulty">
+        <option value="20">基础</option>
+        <option value="40" selected>中级</option>
+        <option value="60">专业</option>
+      </select>
+      <label for="enable-assist" class="ml-4">是否启用辅助功能: </label>
+      <input type="checkbox" id="enable-assist">
+    </div>
+    <div class="flex justify-center">
+      <div class="sudoku-grid" id="sudoku-grid"></div>
+    </div>
+    <div class="flex justify-center mt-4">
+      <div id="number-selector" class="flex space-x-2">
+        <button class="bg-gray-300 hover:bg-gray-400 text-black font-bold py-2 px-4 rounded">1</button>
+        <button class="bg-gray-300 hover:bg-gray-400 text-black font-bold py-2 px-4 rounded">2</button>
+        <button class="bg-gray-300 hover:bg-gray-400 text-black font-bold py-2 px-4 rounded">3</button>
+        <button class="bg-gray-300 hover:bg-gray-400 text-black font-bold py-2 px-4 rounded">4</button>
+        <button class="bg-gray-300 hover:bg-gray-400 text-black font-bold py-2 px-4 rounded">5</button>
+        <button class="bg-gray-300 hover:bg-gray-400 text-black font-bold py-2 px-4 rounded">6</button>
+        <button class="bg-gray-300 hover:bg-gray-400 text-black font-bold py-2 px-4 rounded">7</button>
+        <button class="bg-gray-300 hover:bg-gray-400 text-black font-bold py-2 px-4 rounded">8</button>
+        <button class="bg-gray-300 hover:bg-gray-400 text-black font-bold py-2 px-4 rounded">9</button>
+        <button class="bg-gray-300 hover:bg-gray-400 text-black font-bold py-2 px-4 rounded delete-button">删除</button>
+      </div>
+    </div>
+    <div class="flex justify-center mt-4">
+      <button id="toggle-scoreboard" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">显示/隐藏成绩榜</button>
+    </div>
+    <div class="scoreboard" id="scoreboard">
+      <h2 class="text-2xl font-bold text-center mb-2">成绩榜</h2>
+      <table class="table-auto mx-auto">
+        <thead>
+          <tr>
+            <th class="px-4 py-2">难度</th>
+            <th class="px-4 py-2">游玩时间</th>
+            <th class="px-4 py-2">游戏分数</th>
+            <th class="px-4 py-2">游戏评级</th>
+          </tr>
+        </thead>
+        <tbody id="scoreboard-body"></tbody>
+      </table>
+    </div>
+    <div class="mt-4">
+      <h2 class="text-2xl font-bold mb-2">游戏玩法解释</h2>
+      <p>数独游戏由 9×9 的格子构成，包含 9 个 3×3 的九宫格。玩家需要在空格中填入数字 1 - 9，使得每行、每列以及每个九宫格内的数字都不重复，填满所有空格且符合规则即为游戏胜利。</p>
+      <p>玩法：点击下方数字选择器中的数字或格子内已有的黑色数字来选定当前数字，然后点击空格即可填入该数字。若要删除已填入的数字，再次点击该格子或选择“删除”按钮即可。人工填入的数字显示为绿色，若出现重复数字则显示为红色，当某行、某列或某个九宫格填满且数字不重复时，对应格子的底色会变为淡蓝色。</p>
+      <h3 class="text-xl font-bold mt-4">难度说明</h3>
+      <ul class="list-disc list-inside">
+        <li>基础：初始时棋盘上预留较多数字，难度较低，适合新手入门。此难度下不显示辅助功能选项。</li>
+        <li>中级：预留数字适中，有一定的挑战性。玩家可选择启用辅助功能来降低难度。</li>
+        <li>专业：预留数字较少，难度较高，对玩家的逻辑思维和推理能力有较大考验。同样可选择启用辅助功能。</li>
+      </ul>
+      <h3 class="text-xl font-bold mt-4">辅助功能说明</h3>
+      <p>在中级和专业难度下，启用辅助功能后，当玩家点击数字选择器中的数字时，棋盘上所有与该数字相同的格子底色会变为淡黄色，方便玩家查看和推理。</p>
+      <h3 class="text-xl font-bold mt-4">分数说明</h3>
+      <p>每成功填满一行、一列或一个九宫格且数字不重复，玩家可获得 10 分。当所有行、列和九宫格都填满且符合规则时，玩家可获得满分 270 分，游戏胜利。</p>
+      <h3 class="text-xl font-bold mt-4">评级说明</h3>
+      <p>游戏结束后，根据玩家的游玩时间进行评级。游玩时间越短，评级越高，最高为 10.0 分，最低为 0.0 分。</p>
+    </div>
+  </div>
+
+  <script>
+    const sudokuGrid = document.getElementById('sudoku-grid');
+    const numberSelector = document.getElementById('number-selector');
+    const resetButton = document.getElementById('reset-button');
+    const difficultySelect = document.getElementById('difficulty');
+    const scoreElement = document.getElementById('score');
+    const emptyCellsElement = document.getElementById('empty-cells');
+    const timerElement = document.getElementById('timer');
+    const scoreboard = document.getElementById('scoreboard');
+    const scoreboardBody = document.getElementById('scoreboard-body');
+    const toggleScoreboardButton = document.getElementById('toggle-scoreboard');
+    const enableAssistCheckbox = document.getElementById('enable-assist');
+
+    let selectedNumber = null;
+    let grid = [];
+    let score = 0;
+    let emptyCells = 0;
+    let startTime;
+    let timerInterval;
+    let scoreboardData = [];
+
+    function createGrid() {
+      grid = Array.from({ length: 9 }, () => Array(9).fill(0));
+      const difficulty = parseInt(difficultySelect.value);
+      const fullGrid = generateFullGrid();
+      removeCells(fullGrid, difficulty);
+      grid = fullGrid;
+      renderGrid();
+      startTimer();
+      toggleAssistVisibility();
+    }
+
+    function generateFullGrid() {
+      const fullGrid = Array.from({ length: 9 }, () => Array(9).fill(0));
+      solveSudoku(fullGrid, 0, 0);
+      return fullGrid;
+    }
+
+    function solveSudoku(grid, row, col) {
+      if (row === 9) return true;
+      if (col === 9) return solveSudoku(grid, row + 1, 0);
+      for (let num = 1; num <= 9; num++) {
+        if (isValidMove(grid, row, col, num)) {
+          grid[row][col] = num;
+          if (solveSudoku(grid, row, col + 1)) return true;
+          grid[row][col] = 0;
+        }
+      }
+      return false;
+    }
+
+    function isValidMove(grid, row, col, num) {
+      for (let i = 0; i < 9; i++) {
+        if ((i!== col && grid[row][i] === num) || (i!== row && grid[i][col] === num)) return false;
+      }
+      const startRow = Math.floor(row / 3) * 3;
+      const startCol = Math.floor(col / 3) * 3;
+      for (let i = 0; i < 3; i++) {
+        for (let j = 0; j < 3; j++) {
+          if ((startRow + i!== row || startCol + j!== col) && grid[startRow + i][startCol + j] === num) return false;
+        }
+      }
+      return true;
+    }
+
+    function removeCells(grid, count) {
+      const cells = [];
+      for (let i = 0; i < 9; i++) {
+        for (let j = 0; j < 9; j++) {
+          cells.push([i, j]);
+        }
+      }
+      shuffleArray(cells);
+      for (let i = 0; i < count; i++) {
+        const [row, col] = cells[i];
+        grid[row][col] = 0;
+      }
+    }
+
+    function shuffleArray(array) {
+      for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+      }
+    }
+
+    function renderGrid() {
+      emptyCells = 0;
+      sudokuGrid.innerHTML = '';
+      for (let i = 0; i < 9; i++) {
+        for (let j = 0; j < 9; j++) {
+          const cell = document.createElement('div');
+          cell.classList.add('sudoku-cell');
+          if (grid[i][j] !== 0) {
+            cell.textContent = grid[i][j];
+          } else {
+            emptyCells++;
+          }
+          cell.dataset.row = i;
+          cell.dataset.col = j;
+          cell.addEventListener('click', handleCellClick);
+          sudokuGrid.appendChild(cell);
+        }
+      }
+      emptyCellsElement.textContent = emptyCells;
+      checkRowsColsBoxes();
+    }
+
+    function handleCellClick() {
+      const row = parseInt(this.dataset.row);
+      const col = parseInt(this.dataset.col);
+      if (selectedNumber === '删除') {
+        if (this.classList.contains('user-input') || this.classList.contains('error-input')) {
+          grid[row][col] = 0;
+          this.textContent = '';
+          this.classList.remove('user-input', 'error-input');
+          emptyCells++;
+          emptyCellsElement.textContent = emptyCells;
+          checkRowsColsBoxes();
+        }
+      } else if (selectedNumber) {
+        if (grid[row][col] === 0) {
+          grid[row][col] = parseInt(selectedNumber);
+          this.textContent = selectedNumber;
+          this.classList.add('user-input');
+          this.classList.remove('error-input');
+          emptyCells--;
+          emptyCellsElement.textContent = emptyCells;
+          checkRowsColsBoxes();
+          if (emptyCells === 0) {
+            endGame();
+          }
+        } else if (this.classList.contains('user-input')) {
+          grid[row][col] = 0;
+          this.textContent = '';
+          this.classList.remove('user-input', 'error-input');
+          emptyCells++;
+          emptyCellsElement.textContent = emptyCells;
+          checkRowsColsBoxes();
+        }
+      }
+    }
+
+    function handleNumberSelect(event) {
+      const buttons = numberSelector.querySelectorAll('button');
+      buttons.forEach(button => button.classList.remove('selected-number'));
+      event.target.classList.add('selected-number');
+      selectedNumber = event.target.textContent;
+
+      const difficulty = parseInt(difficultySelect.value);
+      const isAssistEnabled = enableAssistCheckbox.checked;
+
+      const cells = sudokuGrid.querySelectorAll('.sudoku-cell');
+      cells.forEach(cell => cell.classList.remove('highlighted-cell'));
+
+      if (isAssistEnabled && (difficulty === 40 || difficulty === 60) && selectedNumber!== '删除') {
+        for (let i = 0; i < 9; i++) {
+          for (let j = 0; j < 9; j++) {
+            if (grid[i][j] === parseInt(selectedNumber)) {
+              const index = i * 9 + j;
+              cells[index].classList.add('highlighted-cell');
+            }
+          }
+        }
+      }
+    }
+
+    function startTimer() {
+      startTime = Date.now();
+      timerInterval = setInterval(() => {
+        const elapsedTime = Date.now() - startTime;
+        const minutes = Math.floor(elapsedTime / 60000);
+        const seconds = Math.floor((elapsedTime % 60000) / 1000);
+        timerElement.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+      }, 1000);
+    }
+
+    function stopTimer() {
+      clearInterval(timerInterval);
+    }
+
+    function resetGame() {
+      score = 0;
+      scoreElement.textContent = score;
+      createGrid();
+    }
+
+    function checkRowsColsBoxes() {
+      score = 0;
+      const cells = sudokuGrid.querySelectorAll('.sudoku-cell');
+      cells.forEach(cell => {
+        if (cell.classList.contains('user-input')) {
+          const row = parseInt(cell.dataset.row);
+          const col = parseInt(cell.dataset.col);
+          if (!isValidMove(grid, row, col, grid[row][col])) {
+            cell.classList.add('error-input');
+            cell.classList.remove('user-input');
+          } else {
+            cell.classList.add('user-input');
+            cell.classList.remove('error-input');
+          }
+        }
+      });
+
+      // 检查行
+      for (let i = 0; i < 9; i++) {
+        const rowNumbers = new Set();
+        const rowCells = [];
+        for (let j = 0; j < 9; j++) {
+          if (grid[i][j] !== 0) {
+            rowNumbers.add(grid[i][j]);
+            rowCells.push(cells[i * 9 + j]);
+          }
+        }
+        if (rowNumbers.size === 9) {
+          score += 10;
+          rowCells.forEach(cell => cell.classList.add('blue-bg'));
+        }
+      }
+
+      // 检查列
+      for (let j = 0; j < 9; j++) {
+        const colNumbers = new Set();
+        const colCells = [];
+        for (let i = 0; i < 9; i++) {
+          if (grid[i][j] !== 0) {
+            colNumbers.add(grid[i][j]);
+            colCells.push(cells[i * 9 + j]);
+          }
+        }
+        if (colNumbers.size === 9) {
+          score += 10;
+          colCells.forEach(cell => cell.classList.add('blue-bg'));
+        }
+      }
+
+      // 检查九宫格
+      for (let startRow = 0; startRow < 9; startRow += 3) {
+        for (let startCol = 0; startCol < 9; startCol += 3) {
+          const boxNumbers = new Set();
+          const boxCells = [];
+          for (let i = 0; i < 3; i++) {
+            for (let j = 0; j < 3; j++) {
+              const row = startRow + i;
+              const col = startCol + j;
+              if (grid[row][col] !== 0) {
+                boxNumbers.add(grid[row][col]);
+                boxCells.push(cells[row * 9 + col]);
+              }
+            }
+          }
+          if (boxNumbers.size === 9) {
+            score += 10;
+            boxCells.forEach(cell => cell.classList.add('blue-bg'));
+          }
+        }
+      }
+
+      scoreElement.textContent = score;
+      if (score === 270) {
+        endGame();
+      }
+    }
+
+    function endGame() {
+      stopTimer();
+      const elapsedTime = Date.now() - startTime;
+      const minutes = Math.floor(elapsedTime / 60000);
+      const seconds = Math.floor((elapsedTime % 60000) / 1000);
+      const timeString = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+      const difficulty = difficultySelect.options[difficultySelect.selectedIndex].text;
+      const rating = calculateRating(elapsedTime);
+      scoreboardData.push({ difficulty, time: timeString, score, rating });
+      updateScoreboard();
+      alert(`游戏胜利！用时: ${timeString}, 分数: ${score}, 评级: ${rating}`);
+    }
+
+    function calculateRating(elapsedTime) {
+      const maxTime = 3600000; // 60分钟
+      const minTime = 0;
+      const rating = 10 - ((elapsedTime - minTime) / (maxTime - minTime)) * 10;
+      return Math.max(0, Math.min(10, rating)).toFixed(1);
+    }
+
+    function updateScoreboard() {
+      scoreboardBody.innerHTML = '';
+      scoreboardData.forEach(entry => {
+        const row = document.createElement('tr');
+        const difficultyCell = document.createElement('td');
+        const timeCell = document.createElement('td');
+        const scoreCell = document.createElement('td');
+        const ratingCell = document.createElement('td');
+
+        difficultyCell.textContent = entry.difficulty;
+        timeCell.textContent = entry.time;
+        scoreCell.textContent = entry.score;
+        ratingCell.textContent = entry.rating;
+
+        row.appendChild(difficultyCell);
+        row.appendChild(timeCell);
+        row.appendChild(scoreCell);
+        row.appendChild(ratingCell);
+
+        scoreboardBody.appendChild(row);
+      });
+    }
+
+    function toggleScoreboard() {
+      scoreboard.classList.toggle('show');
+    }
+
+    function toggleAssistVisibility() {
+      const difficulty = parseInt(difficultySelect.value);
+      const assistLabel = enableAssistCheckbox.previousElementSibling;
+      if (difficulty === 20) {
+        enableAssistCheckbox.style.display = 'none';
+        assistLabel.style.display = 'none';
+      } else {
+        enableAssistCheckbox.style.display = 'inline';
+        assistLabel.style.display = 'inline';
+      }
+    }
+
+    difficultySelect.addEventListener('change', () => {
+      toggleAssistVisibility();
+      createGrid();
+    });
+
+    numberSelector.addEventListener('click', handleNumberSelect);
+    resetButton.addEventListener('click', resetGame);
+    toggleScoreboardButton.addEventListener('click', toggleScoreboard);
+
+    createGrid();
+  </script>
+</body>
+
+</html>
+    
